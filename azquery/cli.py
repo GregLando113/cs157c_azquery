@@ -14,13 +14,17 @@ def main():
 @click.argument('asin')
 @click.option('--stars', type=float, default=None, help='Filter reviews to specific star ratings')
 @click.option('--count', '-c', default=10,help='Amount of reviews to show.')
-def product_reviews(asin, stars, count):
+@click.option('--search_text', '-t', default=None,help='Regular expression to search the review body with.')
+def product_reviews(asin, stars, count, search_text):
     '''Return product reviews for a specific product by its amazon identifier (asin).'''
     reviews = db.get_collection('reviews')
     query = {'asin': asin}
 
     if stars is not None:
         query['overall'] = stars
+    
+    if search_text is not None:
+        query['reviewText'] = {'$regex': search_text}
 
     cur = reviews.find(query).limit(count)
     for res in cur:
