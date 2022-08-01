@@ -45,7 +45,7 @@ def product_reviews(asin, stars, count, search_text, frm, to):
 
 
 @main.command()
-@click.argument('unix_timestamp')
+@click.argument('unix_timestamp', type=float)
 @click.option('--count', '-c', default=10,help='Amount of reviews to show.')
 def reviews_at_unix_time(unix_timestamp, count):
     '''Get reviews posted at a specific UNIX epoch timestamp.'''
@@ -54,6 +54,30 @@ def reviews_at_unix_time(unix_timestamp, count):
     for res in cur:
         pprint.pprint(res)
 
+@main.command()
+@click.option('--reviewer_id', default=None, help='Get user by their reviewer ID.')
+@click.option('--reviewer_name', default=None, help='Get user by their reviewer Name.')
+@click.option('--asin', default=None, help='The amazon identified of the product to search.')
+def average_rating(reviewer_id, reviewer_name, asin):
+    '''Get reviews posted at a specific UNIX epoch timestamp.'''
+    reviews = db.get_collection('reviews')
+    matcher = {}
+    if asin:
+        matcher['asin'] = asin
+    elif reviewer_id:
+        matcher['reviewerID'] = reviewer_id
+    elif reviewer_name:
+        matcher['reviewerName'] = reviewer_name
+    else:
+        print('Please specify either a product asin, reviewerID or reviewer name to search. See inspect-reviewer --help')
+        return
+    cur = reviews.aggregate([
+        {'$match': matcher},
+        { '$group': { '_id': None, 'score':{'$avg':'$overall'} } }
+    ])
+    for res in cur:
+        pprint.pprint(res['score'])
+    
 
 @main.command()
 @click.option('--id', '-i', default=None, help='Get user by their reviewer ID.')
@@ -119,6 +143,42 @@ def rating_distribution_of(reviewer_id):
     ])
     for res in cur:
         pprint.pprint(res)
+
+@main.command()
+@click.option('--id', '-i', default=None, help='Get user by their reviewer ID.')
+@click.option('--name', '-n', default=None, help='Get user by their reviewer Name.')
+@click.option('--stars', type=float, nargs=2, default=None, help='Filter reviews to specific star rating range (e.x. --stars 4 5 to get between 4-5 stars)')
+@click.option('--frm', '--from', type=click.DateTime(), default=None,help='Limit results to this starting posting date and time.')
+@click.option('--to', type=click.DateTime(), default=None,help='Limit results to this ending posting date and time.')
+def review_count(id, name, stars, count, frm, to):
+    '''Return product reviews for a specific reviewer by their reviewer ID.'''
+    reviews = db.get_collection('reviews')
+    query = {}
+
+    if stars is not None:
+        lo, hi = stars
+        query['overall'] = {'$gte': lo, '$lte': hi}
+
+    dates = {}
+    if frm:
+        dates['$gte'] = frm.timestamp()
+    if to:
+        dates['$lte'] = to.timestamp()
+    if dates:
+        query['unixReviewTime'] = dates
+
+    if id:
+        query['reviewerID'] = id
+    elif name:
+        query['reviewerName'] = name
+    else:
+        print('Please specify either a reviewerID or name to search. See inspect-reviewer --help')
+        return
+    
+    cur = reviews.count_documents(query)
+    for res in cur:
+        pprint.pprint(res)
+        print()  
 
 
 if __name__ == '__main__':
