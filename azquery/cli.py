@@ -12,7 +12,7 @@ def main():
 
 @main.command()
 @click.argument('asin')
-@click.option('--count',default=10,help='Amount of reviews to show.')
+@click.option('--count', '-c', default=10,help='Amount of reviews to show.')
 def product_reviews(asin, count):
     '''Return product reviews for a specific product by its amazon identifier (asin).'''
     reviews = db.get_collection('reviews')
@@ -23,8 +23,8 @@ def product_reviews(asin, count):
 @main.command()
 @click.option('--id', default=None, help='Get user by their reviewer ID.')
 @click.option('--name', default=None, help='Optionally get a user by their name over their ID.')
-@click.option('--stars', default=None, help='Filter reviews to specific star ratings')
-@click.option('--count',default=10,help='Amount of reviews to show.')
+@click.option('--stars', type=float, default=None, help='Filter reviews to specific star ratings')
+@click.option('--count', '-c', default=10,help='Amount of reviews to show.')
 def inspect_reviewer(id, name, stars, count):
     '''Return product reviews for a specific reviewer by their reviewer ID.'''
     reviews = db.get_collection('reviews')
@@ -47,7 +47,7 @@ def inspect_reviewer(id, name, stars, count):
 
 
 @main.command()
-@click.option('--count',default=20,help='Amount of negative reviewers to show.')
+@click.option('--count', '-c', default=20,help='Amount of negative reviewers to show.')
 def most_negative_reviewers(count):
     '''Get distribution of users giving the most negative reviews.'''
     reviews = db.get_collection('reviews')
