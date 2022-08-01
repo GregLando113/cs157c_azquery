@@ -1,6 +1,8 @@
 from pydoc import describe
 import click
 import pymongo
+import pprint
+import datetime
 
 
 conn = pymongo.MongoClient('mongodb://44.193.181.226:27018')
@@ -15,7 +17,9 @@ def main():
 @click.option('--stars', type=float, nargs=2, default=None, help='Filter reviews to specific star rating range (e.x. --stars 4 5 to get between 4-5 stars)')
 @click.option('--count', '-c', default=10,help='Amount of reviews to show.')
 @click.option('--search_text', '-t', default=None,help='Regular expression to search the review body with.')
-def product_reviews(asin, stars, count, search_text):
+@click.option('--from', type=click.DateTime(), default=None,help='Limit results to this starting posting date and time.')
+@click.option('--to', type=click.DateTime(), default=None,help='Limit results to this ending posting date and time.')
+def product_reviews(asin, stars, count, search_text, frm, to):
     '''Return product reviews for a specific product by its amazon identifier (asin).'''
     reviews = db.get_collection('reviews')
     query = {'asin': asin}
@@ -24,19 +28,29 @@ def product_reviews(asin, stars, count, search_text):
         lo, hi = stars
         query['overall'] = {'$gte': lo, '$lte': hi}
     
+    dates = {}
+    if frm:
+        dates['$gte'] = frm.timestamp()
+    if to:
+        dates['$lte'] = to.timestamp()
+    if dates:
+        query['unixReviewTime'] = dates
+
     if search_text is not None:
         query['reviewText'] = {'$regex': search_text}
 
     cur = reviews.find(query).limit(count)
     for res in cur:
-        print(res)
+        pprint.pprint(res)
 
 @main.command()
 @click.option('--id', '-i', default=None, help='Get user by their reviewer ID.')
 @click.option('--name', '-n', default=None, help='Get user by their reviewer Name.')
 @click.option('--stars', type=float, nargs=2, default=None, help='Filter reviews to specific star rating range (e.x. --stars 4 5 to get between 4-5 stars)')
 @click.option('--count', '-c', default=10,help='Amount of reviews to show.')
-def inspect_reviewer(id, name, stars, count):
+@click.option('--from', type=click.DateTime(), default=None,help='Limit results to this starting posting date and time.')
+@click.option('--to', type=click.DateTime(), default=None,help='Limit results to this ending posting date and time.')
+def inspect_reviewer(id, name, stars, count, frm, to):
     '''Return product reviews for a specific reviewer by their reviewer ID.'''
     reviews = db.get_collection('reviews')
     query = {}
@@ -45,6 +59,14 @@ def inspect_reviewer(id, name, stars, count):
         lo, hi = stars
         query['overall'] = {'$gte': lo, '$lte': hi}
 
+    dates = {}
+    if frm:
+        dates['$gte'] = frm.timestamp()
+    if to:
+        dates['$lte'] = to.timestamp()
+    if dates:
+        query['unixReviewTime'] = dates
+        
     if id:
         query['reviewerID'] = id
     elif name:
@@ -55,7 +77,8 @@ def inspect_reviewer(id, name, stars, count):
     
     cur = reviews.find(query).limit(count)
     for res in cur:
-        print(res)
+        pprint.pprint(res)
+        print()
 
 
 @main.command()
@@ -70,7 +93,7 @@ def most_negative_reviewers(count):
         { '$limit': count }
     ])
     for res in cur:
-        print(res)
+        pprint.pprint(res)
 
 @main.command()
 @click.argument('reviewer_id')
@@ -83,7 +106,7 @@ def rating_distribution_of(reviewer_id):
         { '$sort': { '_id' : -1 } }
     ])
     for res in cur:
-        print(res)
+        pprint.pprint(res)
 
 
 if __name__ == '__main__':
