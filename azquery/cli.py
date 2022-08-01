@@ -1,3 +1,4 @@
+from pydoc import describe
 import click
 import pymongo
 
@@ -26,6 +27,22 @@ def inspect_reviewer(reviewer_id):
     cur = reviews.find({'reviewerID': reviewer_id})
     for res in cur:
         print(res)
+
+
+@main.command()
+@click.option('--count',default=20,help='Amount of negative reviewers to show.')
+def most_negative_reviewers(count):
+    '''Get distribution of users giving the most negative reviews.'''
+    reviews = db.get_collection('reviews')
+    cur = reviews.aggregate([
+        {'$match': {'overall':1}},
+        { '$group': { '_id': '$reviewerID', 'reviewerName': {'$first': '$reviewerName'}, 'count': { '$sum': 1 } } },
+        { '$sort': { 'count' : -1 } },
+        { '$limit': count }
+    ])
+    for res in cur:
+        print(res)
+
 
 
 
