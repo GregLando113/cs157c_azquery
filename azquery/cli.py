@@ -32,14 +32,15 @@ def product_reviews(asin, stars, count, search_text):
         print(res)
 
 @main.command()
-@click.option('--id', default=None, help='Get user by their reviewer ID.')
+@click.option('--id', '-i', default=None, help='Get user by their reviewer ID.')
+@click.option('--name', '-n', default=None, help='Get user by their reviewer Name.')
 @click.option('--stars', type=float, nargs=2, default=None, help='Filter reviews to specific star rating range (e.x. --stars 4 5 to get between 4-5 stars)')
 @click.option('--count', '-c', default=10,help='Amount of reviews to show.')
 def inspect_reviewer(id, name, stars, count):
     '''Return product reviews for a specific reviewer by their reviewer ID.'''
     reviews = db.get_collection('reviews')
     query = {}
-    
+
     if stars is not None:
         lo, hi = stars
         query['overall'] = {'$gte': lo, '$lte': hi}
