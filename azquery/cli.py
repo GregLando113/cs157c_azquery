@@ -18,8 +18,14 @@ def product_reviews(asin):
     for res in cur:
         print(res)
 
-# @main.command()
-# def inspect_reviewer()
+@main.command()
+@click.argument('reviewer_id')
+def inspect_reviewer(reviewer_id):
+    '''Return product reviews for a specific reviewer by their reviewer ID.'''
+    reviews = db.get_collection('reviews')
+    cur = reviews.find({'reviewerID': reviewer_id})
+    for res in cur:
+        print(res)
 
 
 
