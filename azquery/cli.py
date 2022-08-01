@@ -12,7 +12,7 @@ def main():
 
 @main.command()
 @click.argument('asin')
-@click.option('--stars', type=float, default=None, help='Filter reviews to specific star ratings')
+@click.option('--stars', type=float, nargs=2, default=None, help='Filter reviews to specific star rating range (e.x. --stars 4 5 to get between 4-5 stars)')
 @click.option('--count', '-c', default=10,help='Amount of reviews to show.')
 @click.option('--search_text', '-t', default=None,help='Regular expression to search the review body with.')
 def product_reviews(asin, stars, count, search_text):
@@ -21,7 +21,8 @@ def product_reviews(asin, stars, count, search_text):
     query = {'asin': asin}
 
     if stars is not None:
-        query['overall'] = stars
+        lo, hi = stars
+        query['overall'] = {'$gte': lo, '$lte': hi}
     
     if search_text is not None:
         query['reviewText'] = {'$regex': search_text}
@@ -32,16 +33,16 @@ def product_reviews(asin, stars, count, search_text):
 
 @main.command()
 @click.option('--id', default=None, help='Get user by their reviewer ID.')
-@click.option('--name', default=None, help='Optionally get a user by their name over their ID.')
-@click.option('--stars', type=float, default=None, help='Filter reviews to specific star ratings')
+@click.option('--stars', type=float, nargs=2, default=None, help='Filter reviews to specific star rating range (e.x. --stars 4 5 to get between 4-5 stars)')
 @click.option('--count', '-c', default=10,help='Amount of reviews to show.')
 def inspect_reviewer(id, name, stars, count):
     '''Return product reviews for a specific reviewer by their reviewer ID.'''
     reviews = db.get_collection('reviews')
     query = {}
-
+    
     if stars is not None:
-        query['overall'] = stars
+        lo, hi = stars
+        query['overall'] = {'$gte': lo, '$lte': hi}
 
     if id:
         query['reviewerID'] = id
