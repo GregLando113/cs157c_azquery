@@ -12,11 +12,17 @@ def main():
 
 @main.command()
 @click.argument('asin')
+@click.option('--stars', type=float, default=None, help='Filter reviews to specific star ratings')
 @click.option('--count', '-c', default=10,help='Amount of reviews to show.')
-def product_reviews(asin, count):
+def product_reviews(asin, stars, count):
     '''Return product reviews for a specific product by its amazon identifier (asin).'''
     reviews = db.get_collection('reviews')
-    cur = reviews.find({'asin': asin}).limit(count)
+    query = {'asin': asin}
+
+    if stars is not None:
+        query['overall'] = stars
+
+    cur = reviews.find(query).limit(count)
     for res in cur:
         print(res)
 
