@@ -5,7 +5,7 @@ import pprint
 import datetime
 
 
-conn = pymongo.MongoClient('mongodb://44.193.181.226:27018')
+conn = pymongo.MongoClient('mongodb://44.193.181.226:27018') # modify this to be the host of your mongos shard cluster server.
 db = conn.get_database('testdb')
 
 @click.group()
