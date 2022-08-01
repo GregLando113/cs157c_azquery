@@ -150,7 +150,7 @@ def rating_distribution_of(reviewer_id):
 @click.option('--stars', type=float, nargs=2, default=None, help='Filter reviews to specific star rating range (e.x. --stars 4 5 to get between 4-5 stars)')
 @click.option('--frm', '--from', type=click.DateTime(), default=None,help='Limit results to this starting posting date and time.')
 @click.option('--to', type=click.DateTime(), default=None,help='Limit results to this ending posting date and time.')
-def review_count(id, name, stars, count, frm, to):
+def review_count(id, name, stars, frm, to):
     '''Return product reviews for a specific reviewer by their reviewer ID.'''
     reviews = db.get_collection('reviews')
     query = {}
@@ -175,10 +175,8 @@ def review_count(id, name, stars, count, frm, to):
         print('Please specify either a reviewerID or name to search. See inspect-reviewer --help')
         return
     
-    cur = reviews.count_documents(query)
-    for res in cur:
-        pprint.pprint(res)
-        print()  
+    count = reviews.count_documents(query)
+    pprint.pprint(count)
 
 
 if __name__ == '__main__':
