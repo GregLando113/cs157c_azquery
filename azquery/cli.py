@@ -23,17 +23,25 @@ def product_reviews(asin, count):
 @main.command()
 @click.option('--id', default=None, help='Get user by their reviewer ID.')
 @click.option('--name', default=None, help='Optionally get a user by their name over their ID.')
+@click.option('--stars', default=None, help='Filter reviews to specific star ratings')
 @click.option('--count',default=10,help='Amount of reviews to show.')
-def inspect_reviewer(id, name, count):
+def inspect_reviewer(id, name, stars, count):
     '''Return product reviews for a specific reviewer by their reviewer ID.'''
     reviews = db.get_collection('reviews')
+    query = {}
+
+    if stars is not None:
+        query['overall'] = stars
+
     if id:
-        cur = reviews.find({'reviewerID': id}).limit(count)
+        query['reviewerID'] = id
     elif name:
-        cur = reviews.find({'reviewerName': name}).limit(count)
+        query['reviewerName'] = name
     else:
         print('Please specify either a reviewerID or name to search. See inspect-reviewer --help')
         return
+    
+    cur = reviews.find(query).limit(count)
     for res in cur:
         print(res)
 
