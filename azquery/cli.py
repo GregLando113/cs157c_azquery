@@ -43,42 +43,6 @@ def product_reviews(asin, stars, count, search_text, frm, to):
     for res in cur:
         pprint.pprint(res)
 
-
-@main.command()
-@click.argument('unix_timestamp', type=float)
-@click.option('--count', '-c', default=10,help='Amount of reviews to show.')
-def reviews_at_unix_time(unix_timestamp, count):
-    '''Get reviews posted at a specific UNIX epoch timestamp.'''
-    reviews = db.get_collection('reviews')
-    cur = reviews.find({'unixReviewTime': unix_timestamp}).limit(count)
-    for res in cur:
-        pprint.pprint(res)
-
-@main.command()
-@click.option('--reviewer_id', default=None, help='Get user by their reviewer ID.')
-@click.option('--reviewer_name', default=None, help='Get user by their reviewer Name.')
-@click.option('--asin', default=None, help='The amazon identified of the product to search.')
-def average_rating(reviewer_id, reviewer_name, asin):
-    '''Get reviews posted at a specific UNIX epoch timestamp.'''
-    reviews = db.get_collection('reviews')
-    matcher = {}
-    if asin:
-        matcher['asin'] = asin
-    elif reviewer_id:
-        matcher['reviewerID'] = reviewer_id
-    elif reviewer_name:
-        matcher['reviewerName'] = reviewer_name
-    else:
-        print('Please specify either a product asin, reviewerID or reviewer name to search. See inspect-reviewer --help')
-        return
-    cur = reviews.aggregate([
-        {'$match': matcher},
-        { '$group': { '_id': None, 'score':{'$avg':'$overall'} } }
-    ])
-    for res in cur:
-        pprint.pprint(res['score'])
-    
-
 @main.command()
 @click.option('--id', '-i', default=None, help='Get user by their reviewer ID.')
 @click.option('--name', '-n', default=None, help='Get user by their reviewer Name.')
@@ -118,6 +82,41 @@ def inspect_reviewer(id, name, stars, count, frm, to):
 
 
 @main.command()
+@click.argument('unix_timestamp', type=float)
+@click.option('--count', '-c', default=10,help='Amount of reviews to show.')
+def reviews_at_unix_time(unix_timestamp, count):
+    '''Get reviews posted at a specific UNIX epoch timestamp.'''
+    reviews = db.get_collection('reviews')
+    cur = reviews.find({'unixReviewTime': unix_timestamp}).limit(count)
+    for res in cur:
+        pprint.pprint(res)
+
+@main.command()
+@click.option('--reviewer_id', default=None, help='Get user by their reviewer ID.')
+@click.option('--reviewer_name', default=None, help='Get user by their reviewer Name.')
+@click.option('--asin', default=None, help='The amazon identified of the product to search.')
+def average_rating(reviewer_id, reviewer_name, asin):
+    '''Get reviews posted at a specific UNIX epoch timestamp.'''
+    reviews = db.get_collection('reviews')
+    matcher = {}
+    if asin:
+        matcher['asin'] = asin
+    elif reviewer_id:
+        matcher['reviewerID'] = reviewer_id
+    elif reviewer_name:
+        matcher['reviewerName'] = reviewer_name
+    else:
+        print('Please specify either a product asin, reviewerID or reviewer name to search. See inspect-reviewer --help')
+        return
+    cur = reviews.aggregate([
+        {'$match': matcher},
+        { '$group': { '_id': None, 'score':{'$avg':'$overall'} } }
+    ])
+    for res in cur:
+        pprint.pprint(res['score'])
+
+
+@main.command()
 @click.option('--count', '-c', default=20,help='Amount of negative reviewers to show.')
 def most_negative_reviewers(count):
     '''Get users giving the most negative reviews.'''
@@ -134,10 +133,14 @@ def most_negative_reviewers(count):
 @main.command()
 @click.argument('reviewer_id')
 def rating_distribution_of(reviewer_id):
-    '''Return distribution of ratings for a user.'''
+    '''Return distribution of ratings for a user, or @all for all reviews in the dataset.'''
     reviews = db.get_collection('reviews')
+
+    matcher = {}
+    if reviewer_id != '@all':
+        matcher['reviewerID'] = reviewer_id
     cur = reviews.aggregate([
-        {'$match': {'reviewerID': reviewer_id}},
+        {'$match': matcher},
         { '$group': { '_id': '$overall', 'count': { '$sum': 1 } } },
         { '$sort': { '_id' : -1 } }
     ])
